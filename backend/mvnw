@@ -1,0 +1,3 @@
+#!/bin/bash
+echo "Please install Maven or replace this wrapper with a real mvnw. This placeholder won't build."
+mvn "$@"
