@@ -1,51 +1,58 @@
 package com.example.todo.controller;
 
-import com.example.todo.dto.CreateTodoDto;
-import com.example.todo.dto.TodoDto;
-import com.example.todo.service.TodoService;
-import jakarta.validation.Valid;
-import org.springframework.data.domain.Page;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/todos")
-@CrossOrigin(origins = "*")
 public class TodoController {
-    private final TodoService service;
 
-    public TodoController(TodoService service) {
-        this.service = service;
+    // Temporary in-memory list (acts like a fake database)
+    private List<Map<String, Object>> todos = new ArrayList<>();
+
+    // Constructor with some sample data
+    public TodoController() {
+        Map<String, Object> todo1 = new HashMap<>();
+        todo1.put("id", 1);
+        todo1.put("title", "Learn Spring Boot");
+        todo1.put("completed", false);
+
+        Map<String, Object> todo2 = new HashMap<>();
+        todo2.put("id", 2);
+        todo2.put("title", "Build Inventory Management App");
+        todo2.put("completed", true);
+
+        todos.add(todo1);
+        todos.add(todo2);
     }
 
+    // ✅ GET — returns all todos
     @GetMapping
-    public Page<TodoDto> list(@RequestParam(defaultValue = "0") int page,
-                              @RequestParam(defaultValue = "20") int size) {
-        return service.list(page, size);
+    public List<Map<String, Object>> getAllTodos() {
+        return todos;
     }
 
+    // ✅ POST — add a new todo
     @PostMapping
-    public ResponseEntity<TodoDto> create(@Valid @RequestBody CreateTodoDto dto) {
-        var created = service.create(dto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    public Map<String, Object> addTodo(@RequestBody Map<String, Object> todo) {
+        todo.put("id", todos.size() + 1);
+        todos.add(todo);
+        return todo;
     }
 
+    // ✅ GET by ID
     @GetMapping("/{id}")
-    public ResponseEntity<TodoDto> get(@PathVariable Long id) {
-        return service.get(id).map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public Map<String, Object> getTodoById(@PathVariable int id) {
+        return todos.stream()
+                .filter(t -> (int) t.get("id") == id)
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Todo not found"));
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<TodoDto> update(@PathVariable Long id, @Valid @RequestBody CreateTodoDto dto) {
-        return service.update(id, dto).map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
+    // ✅ DELETE by ID
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        boolean deleted = service.delete(id);
-        return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
+    public String deleteTodoById(@PathVariable int id) {
+        todos.removeIf(t -> (int) t.get("id") == id);
+        return "Todo deleted with ID: " + id;
     }
 }
