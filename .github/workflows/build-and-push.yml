@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      AWS_REGION: us-east-1        # Change to your region
+      AWS_REGION: us-east-1        # Change to your AWS region
       ECR_REPOSITORY: inventory-backend
 
     steps:
@@ -40,7 +40,15 @@ jobs:
           cd backend
           mvn clean install -DskipTests
 
-      # 5. Log in to AWS ECR
+      # 5. Test AWS credentials
+      - name: Test AWS credentials
+        run: aws sts get-caller-identity
+        env:
+          AWS_REGION: ${{ env.AWS_REGION }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      # 6. Log in to AWS ECR
       - name: Log in to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
         with:
@@ -50,13 +58,13 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      # 6. Build Docker image
+      # 7. Build Docker image
       - name: Build Docker image
         run: |
           cd backend
           docker build -t $ECR_REPOSITORY:latest .
 
-      # 7. Tag Docker image with ECR URL and commit SHA
+      # 8. Tag Docker image with ECR URL and commit SHA
       - name: Tag Docker image
         run: |
           ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
@@ -64,7 +72,7 @@ jobs:
           docker tag $ECR_REPOSITORY:latest $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest
           docker tag $ECR_REPOSITORY:latest $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$COMMIT_SHA
 
-      # 8. Push Docker image to ECR
+      # 9. Push Docker image to ECR
       - name: Push Docker image to ECR
         run: |
           ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
