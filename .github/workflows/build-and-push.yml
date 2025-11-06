@@ -36,7 +36,9 @@ jobs:
 
       # 4. Build Maven project
       - name: Build with Maven
-        run: mvn clean install -DskipTests
+        run: |
+          cd backend
+          mvn clean install -DskipTests
 
       # 5. Set up Docker
       - name: Log in to Amazon ECR
@@ -45,6 +47,7 @@ jobs:
       # 6. Build Docker image
       - name: Build Docker image
         run: |
+          cd backend
           docker build -t $ECR_REPOSITORY:latest .
 
       # 7. Tag Docker image
